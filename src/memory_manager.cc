@@ -23,17 +23,17 @@
  *
  */
 
-#include <memory>
-#include <iostream>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <fcntl.h> // for O_RDWR
-#include <sys/mman.h> // for PROT_READ, PROT_WRITE, MAP_SHARED
-#include <unistd.h> // for getpagesize()
-#include <string>
 #include <boost/filesystem.hpp>
 #include <errno.h>
+#include <fcntl.h> // for O_RDWR
+#include <iostream>
+#include <memory>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string>
+#include <sys/mman.h> // for PROT_READ, PROT_WRITE, MAP_SHARED
+#include <unistd.h>   // for getpagesize()
 
 #include "nvmm/error_code.h"
 #include "nvmm/shelf_id.h" // for PoolId
@@ -79,100 +79,88 @@ namespace nvmm {
 // ShelfManager in shelf_manager.h
 int StartNVMM(std::string base, std::string user) {
 
-    if(!base.empty() || !user.empty())
-        config=Config(base, user);
-    try{
-	   if (boost::filesystem::exists(config.ShelfBase) == false)
-    	   {
-   		try{
-	        	if(boost::filesystem::create_directory(config.ShelfBase) == false) 
-			{
-				LOG(fatal) << "NVMM: failed to create shelf base dir at " << config.ShelfBase << std::endl;
-				std::cout << "NVMM: failed to create shelf base dir at " << config.ShelfBase << std::endl;
-			        return SHELF_BASE_DIR_CREATE_FAILED;
-        		}
-    		   }
-		catch (boost::filesystem::filesystem_error const &err)
-		{
-			if(err.code().value() == 2)
-			{
-				LOG(trace) << "boost::filesystem::filesystem_error error code "  << err.code();
-			}
-			else
-			{
-				LOG(fatal) << "boost::filesystem::filesystem_error error code "  << err.code();
-			}
-			return err.code().value();
-		}
-	   }
-	}
-	catch (boost::filesystem::filesystem_error const &err)
-    	{
-        	if(err.code().value() == 2)
-	        {
-        	    LOG(trace) << "boost::filesystem::filesystem_error error code "  << err.code();
-
-	        }
-        	else
-	        {
-        	    LOG(fatal) << "boost::filesystem::filesystem_error error code "  << err.code();
-        	}
-	        return err.code().value();
-
-    	}
-
-    // Check if shelf base exists
-    boost::filesystem::path shelf_base_path = boost::filesystem::path(config.ShelfBase);
-    try 
-    {
-    	if (boost::filesystem::exists(shelf_base_path) == false)
-	{
-        	LOG(fatal) << "NVMM: LFS/tmpfs does not exist?" << config.ShelfBase;
-	        std::cout << "NVMM: LFS/tmpfs does not exist?" << std::endl;
-        	return SHELF_BASE_PATH_DOES_NOT_EXIST;
-    	}
-    }
-    catch (boost::filesystem::filesystem_error const &err)
-    {
-        if(err.code().value() == 2)
-        {
-            LOG(trace) <<"boost::filesystem::filesystem_error Error code " << err.code();
-
+  if (!base.empty() || !user.empty())
+    config = Config(base, user);
+  try {
+    if (boost::filesystem::exists(config.ShelfBase) == false) {
+      try {
+        if (boost::filesystem::create_directory(config.ShelfBase) == false) {
+          LOG(fatal) << "NVMM: failed to create shelf base dir at "
+                     << config.ShelfBase << std::endl;
+          std::cout << "NVMM: failed to create shelf base dir at "
+                    << config.ShelfBase << std::endl;
+          return SHELF_BASE_DIR_CREATE_FAILED;
         }
-        else
-        {
-            LOG(fatal) << "boost::filesystem::filesystem_error Error code  " << err.code();
+      } catch (boost::filesystem::filesystem_error const &err) {
+        if (err.code().value() == 2) {
+          LOG(trace) << "boost::filesystem::filesystem_error error code "
+                     << err.code();
+        } else {
+          LOG(fatal) << "boost::filesystem::filesystem_error error code "
+                     << err.code();
         }
-	return err.code().value();
-
+        return err.code().value();
+      }
     }
+  } catch (boost::filesystem::filesystem_error const &err) {
+    if (err.code().value() == 2) {
+      LOG(trace) << "boost::filesystem::filesystem_error error code "
+                 << err.code();
 
-    // create a root shelf for MemoryManager if it does not exist
-    RootShelf root_shelf(config.RootShelfPath);
-    if(root_shelf.Exist() == false)
-    {
-        ErrorCode ret = root_shelf.Create();
-        if (ret!=NO_ERROR && ret != SHELF_FILE_FOUND)
-        {
-            LOG(fatal) << "NVMM: Failed to create the root shelf file: error code "<<ret << config.RootShelfPath;
-   	    std::cout <<"NVMM: Failed to create the root shelf file: error code "<<ret <<std::endl;
-	    return SHELF_FILE_CREATE_FAILED;
-        }
+    } else {
+      LOG(fatal) << "boost::filesystem::filesystem_error error code "
+                 << err.code();
     }
+    return err.code().value();
+  }
 
-    // create a epoch shelf for EpochManager if it does not exist
-    EpochShelf epoch_shelf(config.EpochShelfPath);
-    if(epoch_shelf.Exist() == false)
-    {
-        ErrorCode ret = epoch_shelf.Create();
-        if (ret!=NO_ERROR && ret != SHELF_FILE_FOUND)
-        {
-            LOG(fatal) << "NVMM: Failed to create the epoch shelf file: error code "<<ret << config.EpochShelfPath;
-            std::cout <<"NVMM: Failed to create the epoch shelf file: error code "<<ret << std::endl;
-            return SHELF_FILE_CREATE_FAILED;	 
-        }
+  // Check if shelf base exists
+  boost::filesystem::path shelf_base_path =
+      boost::filesystem::path(config.ShelfBase);
+  try {
+    if (boost::filesystem::exists(shelf_base_path) == false) {
+      LOG(fatal) << "NVMM: LFS/tmpfs does not exist?" << config.ShelfBase;
+      std::cout << "NVMM: LFS/tmpfs does not exist?" << std::endl;
+      return SHELF_BASE_PATH_DOES_NOT_EXIST;
     }
-    return 0;
+  } catch (boost::filesystem::filesystem_error const &err) {
+    if (err.code().value() == 2) {
+      LOG(trace) << "boost::filesystem::filesystem_error Error code "
+                 << err.code();
+
+    } else {
+      LOG(fatal) << "boost::filesystem::filesystem_error Error code  "
+                 << err.code();
+    }
+    return err.code().value();
+  }
+
+  // create a root shelf for MemoryManager if it does not exist
+  RootShelf root_shelf(config.RootShelfPath);
+  if (root_shelf.Exist() == false) {
+    ErrorCode ret = root_shelf.Create();
+    if (ret != NO_ERROR && ret != SHELF_FILE_FOUND) {
+      LOG(fatal) << "NVMM: Failed to create the root shelf file: error code "
+                 << ret << config.RootShelfPath;
+      std::cout << "NVMM: Failed to create the root shelf file: error code "
+                << ret << std::endl;
+      return SHELF_FILE_CREATE_FAILED;
+    }
+  }
+
+  // create a epoch shelf for EpochManager if it does not exist
+  EpochShelf epoch_shelf(config.EpochShelfPath);
+  if (epoch_shelf.Exist() == false) {
+    ErrorCode ret = epoch_shelf.Create();
+    if (ret != NO_ERROR && ret != SHELF_FILE_FOUND) {
+      LOG(fatal) << "NVMM: Failed to create the epoch shelf file: error code "
+                 << ret << config.EpochShelfPath;
+      std::cout << "NVMM: Failed to create the epoch shelf file: error code "
+                << ret << std::endl;
+      return SHELF_FILE_CREATE_FAILED;
+    }
+  }
+  return 0;
 }
 
 void ResetNVMM(std::string base, std::string user) {
