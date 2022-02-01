@@ -50,7 +50,7 @@ namespace nvmm{
 // this function is NOT thread-safe/process-safe
 // this function must run once and only once in both single-node and multi-node environments,
 // before the first call to GetInstance()
-void StartNVMM(std::string base="", std::string user="");
+int StartNVMM(std::string base="", std::string user="");
 
 // Delete all previous shelves, resetting both the memory manager and epoch manager
 // this function is NOT thread-safe/process-safe

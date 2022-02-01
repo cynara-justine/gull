@@ -127,6 +127,8 @@ enum ErrorCode {
     ID_NOT_VALID,   // This id is not valid
     INVALID_PTR,
     MAP_POINTER_FAILED,
+    SHELF_BASE_DIR_CREATE_FAILED,
+    SHELF_BASE_PATH_DOES_NOT_EXIST,
 
     // shelf manager (250-)
     SHELF_ID_NOT_FOUND = 250,
